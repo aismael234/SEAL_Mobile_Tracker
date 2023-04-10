@@ -18,6 +18,7 @@ const MS_PER_MINUTE = 60000;
 const MS_PER_HOUR = 3600000;
 
 // InfluxDB setup
+// **These are private credentials and should not be displayed in production**
 const token =
   "4oaBPQIZR46YM6XA_z7cojw_yRTCx353Lj7KweWZLw2Gzl79sp2PQqYc-Y22zCWi8dhzlRBn9epre1bk1WI7BA==";
 const org = "d299810bfddf9f13";
