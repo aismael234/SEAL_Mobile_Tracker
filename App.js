@@ -14,6 +14,7 @@ import DateTimePickerModal from "react-native-modal-datetime-picker";
 import Graph from "./components/Graph";
 
 // milliseconds per ___
+const MS_PER_SECOND = 1000;
 const MS_PER_MINUTE = 60000;
 const MS_PER_HOUR = 3600000;
 
@@ -27,15 +28,6 @@ const url = "https://us-west-2-2.aws.cloud2.influxdata.com";
 const client = new InfluxDB({ url, token });
 
 export default function App() {
-  const [data, setData] = useState([
-    { _field: "empty", _time: "empty", _value: "empty" },
-  ]);
-
-  // Live update interval selection
-  const dropdownData = ["OFF", "3s", "5s", "10s"];
-  const [selectedValue, setSelectedValue] = useState("OFF");
-  const [selectedIndex, setSelectedIndex] = useState(0);
-
   // Quick Range selection
   const quickRangeData = [
     "Last 5 minutes",
@@ -84,9 +76,41 @@ export default function App() {
     settemptoDate(date);
     console.warn("A TO date has been picked: ", date);
   };
+  /* 
+    checks if value in datepicker is Date object or string (e.g. 'now - 5m')
+    if string, converts to corresponding date 
+  */
+  function dateOrString(date) {
+    if (typeof date === "string" || date instanceof String) {
+      if (date == "now") return new Date();
+      else {
+        const regex = /\d+/;
+        const match = date.match(regex);
+
+        if (match) {
+          // find first occurrence of number
+          const number = parseInt(match[0]);
+
+          // subtract by either minutes or hours
+          if (date.endsWith("m"))
+            return new Date(new Date().getTime() - number * MS_PER_MINUTE);
+          else if (date.endsWith("h"))
+            return new Date(new Date().getTime() - number * MS_PER_HOUR);
+        } else {
+          // incorrect format
+          throw new Error("Date regex failed.");
+        }
+      }
+    } else return date;
+  }
 
   // "2023-03-02T18:48:59.495Z"
   // "2023-03-02T18:50:48.577Z"
+
+  // InfluxDB query result data
+  const [data, setData] = useState([
+    { _field: "empty", _time: "empty", _value: "empty" },
+  ]);
 
   // fetch all data within specified time range
   const fetchData = async () => {
@@ -94,8 +118,8 @@ export default function App() {
     const toDateCopy = dateOrString(toDate);
 
     // error checking
-    if (fromDateCopy.getTime() > toDateCopy.getTime()) {
-      console.log("'From' date cannot be after 'To' date.");
+    if (fromDateCopy.getTime() >= toDateCopy.getTime()) {
+      console.log("'From' date must be before 'To' date.");
     } else if (
       Math.abs(toDateCopy.getTime() - fromDateCopy.getTime()) > 86400000
     ) {
@@ -123,6 +147,38 @@ export default function App() {
       console.log("\n\ntime range queried: " + fromDate + " to " + toDate);
     }
   };
+
+  // Live update interval selection
+  const dropdownData = ["OFF", "3s", "5s", "10s"];
+  const [selectedValue, setSelectedValue] = useState("OFF");
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  /* 
+    Automatic graph data updates
+    using interval timers. Triggers every time
+    'selectedValue'(Refresh Timer value) changes.
+  */
+  useEffect(() => {
+    if (selectedValue != "OFF") {
+      const regex = /\d+/;
+      const match = selectedValue.match(regex);
+
+      if (match) {
+        // find first occurrence of number
+        const number = parseInt(match[0]);
+
+        // set interval to 'Refresh Time'
+        const interval = setInterval(() => {
+          fetchData();
+        }, number * MS_PER_SECOND);
+
+        return () => clearInterval(interval);
+      } else {
+        // incorrect format
+        throw new Error("Refresh timer regex failed.");
+      }
+    }
+  }, [selectedValue]);
 
   // Apply a quick range selection to current time
   const handleQuickRange = (index, value) => {
@@ -155,33 +211,10 @@ export default function App() {
     }
   };
 
-  // checks if value in datepicker is Date object or string (e.g. 'now - 5m')
-  function dateOrString(date) {
-    if (typeof date === "string" || date instanceof String) {
-      if (date == "now") return new Date();
-      else {
-        const regex = /\d+/;
-        const match = date.match(regex);
-
-        if (match) {
-          // find first occurrence of number
-          const number = parseInt(match[0]);
-
-          // subtract by either minutes or hours
-          if (date.endsWith("m"))
-            return new Date(new Date().getTime() - number * MS_PER_MINUTE);
-          else if (date.endsWith("h"))
-            return new Date(new Date().getTime() - number * MS_PER_HOUR);
-        } else {
-          // incorrect format
-          throw new Error("Date regex failed.");
-        }
-      }
-    } else return date;
-  }
-
-  // makes sure that the state of all Date objects
-  // are updated BEFORE calling fetchData()
+  /*
+    makes sure that the state of all Date objects
+    are updated BEFORE calling fetchData() 
+  */
   const [fromDateChanged, setfromDateChanged] = useState(false);
   const [toDateChanged, settoDateChanged] = useState(false);
 
