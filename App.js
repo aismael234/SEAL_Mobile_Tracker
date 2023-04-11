@@ -112,6 +112,53 @@ export default function App() {
     { _field: "empty", _time: "empty", _value: "empty" },
   ]);
 
+  // Individual graphs data
+  const [engineSpeedData, setengineSpeedData] = useState([
+    { _field: "empty", _time: "empty", _value: "empty" },
+  ]);
+  const [actualEnginePercentTorqueData, setactualEnginePercentTorqueData] =
+    useState([{ _field: "empty", _time: "empty", _value: "empty" }]);
+  const [engineFuelRateData, setengineFuelRateData] = useState([
+    { _field: "empty", _time: "empty", _value: "empty" },
+  ]);
+  const [torqueData, settorqueData] = useState([
+    { _field: "empty", _time: "empty", _value: "empty" },
+  ]);
+  const [hpData, sethpData] = useState([
+    { _field: "empty", _time: "empty", _value: "empty" },
+  ]);
+
+  // data calculations for graph visualizations
+  // any graph's calculation call should only come after the data it depends on is acquired/calculated
+  function getengineSpeed(data) {
+    return data.filter((o) => o._field === "EngineSpeed");
+  }
+  function getactualEnginePercentTorque(data) {
+    return data.filter((o) => o._field === "ActualEnginePercentTorque");
+  }
+  function getengineFuelRate(data) {
+    return data.filter((o) => o._field === "EngineFuelRate");
+  }
+  function gettorque(data) {
+    return data
+      .filter((o) => o._field === "ActualEnginePercentTorque")
+      .map((o) => ({ ...o, _value: (o._value / 100) * 5252 }));
+  }
+
+  function getHP(data) {
+    const tempengineSpeedData = getengineSpeed(data);
+
+    const r = getactualEnginePercentTorque(data).map((o) => ({
+      ...o,
+      _field: "hp",
+      _value:
+        (o._value / 100) *
+        tempengineSpeedData.find((m) => m._time === o._time)._value,
+    }));
+
+    return r;
+  }
+
   // fetch all data within specified time range
   const fetchData = async () => {
     const fromDateCopy = dateOrString(fromDate);
@@ -141,9 +188,16 @@ export default function App() {
       }
       setData(dataArray);
 
-      for (i = 0; i < 10 && i < dataArray.length; i++) {
-        console.log(dataArray[i]);
-      }
+      // calculate all graph data
+      setengineSpeedData(getengineSpeed(dataArray));
+      setactualEnginePercentTorqueData(getactualEnginePercentTorque(dataArray));
+      setengineFuelRateData(getengineFuelRate(dataArray));
+      settorqueData(gettorque(dataArray));
+      sethpData(getHP(dataArray));
+
+      // for (i = 0; i < 10 && i < dataArray.length; i++) {
+      //   console.log(dataArray[i]);
+      // }
       console.log("\n\ntime range queried: " + fromDate + " to " + toDate);
     }
   };
@@ -234,12 +288,6 @@ export default function App() {
       settoDateChanged(false);
     }
   }, [fromDateChanged, toDateChanged]);
-
-  // ROUGH pseudocode
-  // useeffect() that relies on interval value in dependency array
-  // keep state of interval value and interval id
-  // keep state of current 'from' and 'to' time ranges to update
-  // if time range == 'Now', keep creating 'new Date()'?
 
   return (
     <SafeAreaView style={styles.container}>
@@ -417,16 +465,10 @@ export default function App() {
           </Text>
         </View>
         <View style="graphFlexBox">
-          <Graph
-            title="Engine Speed (rpm)"
-            data={data.filter((o) => o._field === "EngineSpeed")}
-          />
-          <Graph
-            title="Torque (? unit)"
-            data={data
-              .filter((o) => o._field === "ActualEnginePercentTorque")
-              .map((o) => ({ ...o, _value: (o._value / 100) * 5252 }))}
-          />
+          <Graph title="Engine Speed (rpm)" data={engineSpeedData} />
+          <Graph title="hp" data={hpData}></Graph>
+          <Graph title="Torque (? unit)" data={torqueData} />
+          <Graph title="Fuel Rate (l/h?)" data={engineFuelRateData} />
         </View>
       </ScrollView>
     </SafeAreaView>
