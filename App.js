@@ -65,10 +65,14 @@ export default function App() {
   const handlewhatChanged = (value) => {
     console.log("current value: " + whatChanged);
     console.log("incoming value: " + value);
+
     switch (value) {
       case "None":
         setwhatChanged(value);
         break;
+      case "Temp From and To":
+        if (whatChanged === value) break;
+        setwhatChanged(value);
       case "Temp From":
         if (whatChanged === "Temp From and To" || whatChanged === value) break;
         if (whatChanged === "Temp To") setwhatChanged("Temp From and To");
@@ -309,6 +313,7 @@ export default function App() {
         settempfromDate("now-24h");
         break;
     }
+    handlewhatChanged("Temp From and To");
   };
 
   /*
@@ -382,6 +387,7 @@ export default function App() {
                 setSelectedIndex(index);
                 setSelectedValue(value);
               }}
+              saveScrollPosition={false}
               defaultValue={selectedValue}
               defaultIndex={selectedIndex}
               options={dropdownData}
