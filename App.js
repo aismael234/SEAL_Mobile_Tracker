@@ -45,15 +45,57 @@ export default function App() {
     useState(false);
   const [isToDatePickerVisible, setToDatePickerVisibility] = useState(false);
 
+  // True date values. These are used for fetching data.
   const [fromDate, setfromDate] = useState(
     new Date("2023-03-02T18:48:59.495Z")
   );
   const [toDate, settoDate] = useState(new Date("2023-03-02T18:50:48.577Z"));
 
-  // Date pickers hold these dates until "Apply" is pressed
+  /* 
+  Determines which time value changed within the date picker
+  this lets us know which state to wait for completion before
+  fetching data
+
+  NOTE: We say "wait for completion" because setState functions
+        are asynchronous
+  */
+  // initial state set to both changed to allow initial fetchData call
+  const [whatChanged, setwhatChanged] = useState("Temp From and To");
+
+  const handlewhatChanged = (value) => {
+    console.log("current value: " + whatChanged);
+    console.log("incoming value: " + value);
+    switch (value) {
+      case "None":
+        setwhatChanged(value);
+        break;
+      case "Temp From":
+        if (whatChanged === "Temp From and To" || whatChanged === value) break;
+        if (whatChanged === "Temp To") setwhatChanged("Temp From and To");
+        else setwhatChanged(value);
+        break;
+      case "Temp To":
+        if (whatChanged === "Temp From and To" || whatChanged === value) break;
+        if (whatChanged === "Temp From") setwhatChanged("Temp From and To");
+        else setwhatChanged(value);
+        break;
+      default:
+        throw new Error("Incorrect 'whatChanged' value: " + whatChanged);
+    }
+  };
+
+  // Date pickers hold these temp dates until "Apply" is pressed
+  /* 
+  The reason why we hold these temporary values is because
+  the automatic updates feature uses the true date values to fetch data.
+  We don't want to select a time range and have it fetch that new date
+  before we can hit "Apply", so we hold it onto the temp value. 
+  Once we hit "Apply", the true date values are finally set to the current temp values.
+  */
   const [tempfromDate, settempfromDate] = useState(fromDate);
   const [temptoDate, settemptoDate] = useState(toDate);
 
+  // Set date picker component visibility
   const showFromDatePicker = () => {
     setFromDatePickerVisibility(true);
   };
@@ -66,14 +108,18 @@ export default function App() {
   const hideToDatePicker = () => {
     setToDatePickerVisibility(false);
   };
+
+  // set temp dates upon pressing date picker "Confirm" button
   const handlefromDateConfirm = (date) => {
     hideFromDatePicker();
     settempfromDate(date);
+    handlewhatChanged("Temp From");
     console.warn("A FROM date has been picked: ", date);
   };
   const handletoDateConfirm = (date) => {
     hideToDatePicker();
     settemptoDate(date);
+    handlewhatChanged("Temp To");
     console.warn("A TO date has been picked: ", date);
   };
   /* 
@@ -98,14 +144,11 @@ export default function App() {
             return new Date(new Date().getTime() - number * MS_PER_HOUR);
         } else {
           // incorrect format
-          throw new Error("Date regex failed.");
+          throw new Error("Date regex failed. String evaluated: " + date);
         }
       }
     } else return date;
   }
-
-  // "2023-03-02T18:48:59.495Z"
-  // "2023-03-02T18:50:48.577Z"
 
   // InfluxDB query result data
   const [data, setData] = useState([
@@ -129,7 +172,7 @@ export default function App() {
   ]);
 
   // data calculations for graph visualizations
-  // any graph's calculation call should only come after the data it depends on is acquired/calculated
+  // NOTE: any graph's calculation call should only come after the data it depends on is acquired/calculated
   function getengineSpeed(data) {
     return data.filter((o) => o._field === "EngineSpeed");
   }
@@ -195,11 +238,12 @@ export default function App() {
       settorqueData(gettorque(dataArray));
       sethpData(getHP(dataArray));
 
-      // for (i = 0; i < 10 && i < dataArray.length; i++) {
-      //   console.log(dataArray[i]);
-      // }
+      for (i = 0; i < 10 && i < dataArray.length; i++) {
+        console.log(dataArray[i]);
+      }
       console.log("\n\ntime range queried: " + fromDate + " to " + toDate);
     }
+    handlewhatChanged("None");
   };
 
   // Live update interval selection
@@ -229,7 +273,9 @@ export default function App() {
         return () => clearInterval(interval);
       } else {
         // incorrect format
-        throw new Error("Refresh timer regex failed.");
+        throw new Error(
+          "Refresh timer regex failed. String evaluated: " + selectedValue
+        );
       }
     }
   }, [selectedValue]);
@@ -281,12 +327,30 @@ export default function App() {
   }, [toDate]);
 
   useEffect(() => {
-    if (fromDateChanged && toDateChanged) {
-      // Run specific function after all state updates are completed
-      fetchData();
-      setfromDateChanged(false);
-      settoDateChanged(false);
-    }
+    console.log("useEffect whatChanged: " + whatChanged);
+    if (whatChanged === "Temp From") {
+      if (fromDateChanged) {
+        // If only from date was changed
+        fetchData();
+        setfromDateChanged(false);
+        settoDateChanged(false);
+      }
+    } else if (whatChanged === "Temp To") {
+      if (toDateChanged) {
+        // If only to date was changed
+        fetchData();
+        setfromDateChanged(false);
+        settoDateChanged(false);
+      }
+    } else if (whatChanged === "Temp From and To") {
+      if (fromDateChanged && toDateChanged) {
+        // Run specific function after all state updates are completed
+        fetchData();
+        setfromDateChanged(false);
+        settoDateChanged(false);
+      }
+    } else if (whatChanged === "None") return;
+    else throw new Error("Incorrect 'whatChanged' value: " + whatChanged);
   }, [fromDateChanged, toDateChanged]);
 
   return (
