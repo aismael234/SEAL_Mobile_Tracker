@@ -6,7 +6,10 @@ import {
   SafeAreaView,
   ScrollView,
   Pressable,
+  Dimensions,
 } from "react-native";
+import "@expo/match-media";
+import { useMediaQuery } from "react-responsive";
 import "fast-text-encoding";
 import { InfluxDB } from "@influxdata/influxdb-client";
 import ModalDropdown from "react-native-modal-dropdown";
@@ -358,6 +361,16 @@ export default function App() {
     else throw new Error("Incorrect 'whatChanged' value: " + whatChanged);
   }, [fromDateChanged, toDateChanged]);
 
+  const isDeviceTablet = useMediaQuery({
+    query: "(min-device-width: 700px)",
+  });
+  console.log(Dimensions.get("window").width * 0.94);
+
+  // calculate graph width based on device dimensions
+  const graphWidth = isDeviceTablet
+    ? (Dimensions.get("window").width * 0.94) / 2
+    : Dimensions.get("window").width * 0.95;
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -534,11 +547,19 @@ export default function App() {
             {toDate.toLocaleString("en-US")}
           </Text>
         </View>
-        <View style="graphFlexBox">
-          <Graph title="Engine Speed (rpm)" data={engineSpeedData} />
-          <Graph title="hp" data={hpData}></Graph>
-          <Graph title="Torque (? unit)" data={torqueData} />
-          <Graph title="Fuel Rate (l/h?)" data={engineFuelRateData} />
+        <View style={styles.graphFlexBox}>
+          <Graph
+            title="Engine Speed (rpm)"
+            data={engineSpeedData}
+            width={graphWidth}
+          />
+          <Graph title="hp" data={hpData} width={graphWidth}></Graph>
+          <Graph title="Torque (? unit)" data={torqueData} width={graphWidth} />
+          <Graph
+            title="Fuel Rate (l/h?)"
+            data={engineFuelRateData}
+            width={graphWidth}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -611,9 +632,14 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderRadius: 3,
   },
-  graphFlexBlox: {
+  graphFlexBox: {
+    width: "100%",
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+
     rowGap: 10,
+    columnGap: 5,
   },
 });

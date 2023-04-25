@@ -15,6 +15,7 @@ export default function Graph(props) {
       <Text style={styles.graphName}>{props.title}</Text>
       <VictoryChart
         backgroundColor="#111216"
+        width={props.width}
         theme={VictoryTheme.material}
         style={{
           parent: {
@@ -66,13 +67,6 @@ export default function Graph(props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#111216",
-    color: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
   graphName: {
     fontSize: 18,
     fontWeight: "bold",
@@ -81,9 +75,7 @@ const styles = StyleSheet.create({
     color: "#CCCCDC",
   },
   graph: {
-    width: "100%",
     alignSelf: "center",
-    marginBottom: 10,
     backgroundColor: "#1d2125",
     borderColor: "#ccccdc12",
     borderWidth: "1px",
