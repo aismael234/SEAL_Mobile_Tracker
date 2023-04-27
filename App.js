@@ -362,14 +362,95 @@ export default function App() {
   }, [fromDateChanged, toDateChanged]);
 
   const isDeviceTablet = useMediaQuery({
-    query: "(min-device-width: 700px)",
+    query: "(min-device-width: 600px)",
   });
-  console.log(Dimensions.get("window").width * 0.94);
 
   // calculate graph width based on device dimensions
   const graphWidth = isDeviceTablet
     ? (Dimensions.get("window").width * 0.94) / 2
     : Dimensions.get("window").width * 0.95;
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: "#101115",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 20,
+    },
+    header: {
+      fontSize: 24,
+      fontWeight: "bold",
+      marginBottom: 20,
+      marginTop: 10,
+      textAlign: "center",
+      color: "white",
+    },
+
+    date_pressable: {
+      width: isDeviceTablet ? 150 : 100,
+      textAlign: "center",
+      borderColor: "#ccccdc12",
+      borderWidth: 1,
+      borderStyle: "solid",
+      borderRadius: 3,
+    },
+    date_quick_range_dropdown: {
+      width: 210,
+      textAlign: "center",
+    },
+    date_quick_range_dropdown_text: {
+      width: isDeviceTablet ? 310 : 210,
+      backgroundColor: "#292929",
+      color: "#CCCCDC",
+      textAlign: "center",
+      borderColor: "#ccccdc12",
+      borderWidth: 1,
+      borderStyle: "solid",
+      borderRadius: 3,
+      paddingVertical: isDeviceTablet ? 10 : 6,
+      fontSize: isDeviceTablet ? 15 : 12,
+    },
+    date_child: {
+      color: "#CCCCDC",
+      textAlign: "center",
+      fontSize: isDeviceTablet ? 18 : 14,
+    },
+
+    dropdown: {
+      width: "100%",
+      paddingVertical: 4,
+      borderWidth: 0,
+      borderRadius: 3,
+      backgroundColor: "cornflowerblue",
+      fontSize: 18,
+    },
+    dropdown_text: {
+      fontSize: 18,
+      color: "white",
+      width: "100%",
+      textAlign: "center",
+      textAlignVertical: "center",
+    },
+    dropdown_dropdown: {
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderColor: "cornflowerblue",
+      borderWidth: 2,
+      borderRadius: 3,
+      fontSize: 18,
+    },
+
+    graphFlexBox: {
+      width: "100%",
+      display: "flex",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
+      rowGap: 10,
+      columnGap: 5,
+    },
+  });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -390,8 +471,14 @@ export default function App() {
             alignItems: "flex-end",
           }}
         >
-          <View style={{ width: 90 }}>
-            <Text style={{ color: "#fff", textAlign: "center" }}>
+          <View style={{ width: isDeviceTablet ? 150 : 90 }}>
+            <Text
+              style={{
+                color: "#fff",
+                textAlign: "center",
+                fontSize: isDeviceTablet ? 16 : 14,
+              }}
+            >
               Refresh Time
             </Text>
             <ModalDropdown
@@ -404,7 +491,10 @@ export default function App() {
               defaultValue={selectedValue}
               defaultIndex={selectedIndex}
               options={dropdownData}
-              style={styles.dropdown}
+              style={{
+                ...styles.dropdown,
+                paddingVertical: isDeviceTablet ? 10 : 6,
+              }}
               showsVerticalScrollIndicator={false}
               textStyle={styles.dropdown_text}
               dropdownStyle={styles.dropdown_dropdown}
@@ -421,6 +511,7 @@ export default function App() {
                     color: "#CCCCDC",
                     textAlign: "center",
                     marginBottom: 5,
+                    fontSize: isDeviceTablet ? 18 : 14,
                   }}
                 >
                   From
@@ -456,6 +547,7 @@ export default function App() {
                     color: "#CCCCDC",
                     textAlign: "center",
                     marginBottom: 5,
+                    fontSize: isDeviceTablet ? 18 : 14,
                   }}
                 >
                   To
@@ -514,7 +606,8 @@ export default function App() {
                   fontWeight: "bold",
                   color: "#CCCCDC",
                   textAlign: "center",
-                  paddingVertical: 6,
+                  paddingVertical: isDeviceTablet ? 10 : 8,
+                  fontSize: isDeviceTablet ? 16 : 14,
                   borderColor: "#ccccdc12",
                   borderWidth: 1,
                   borderStyle: "solid",
@@ -531,7 +624,7 @@ export default function App() {
             styles.date_child,
             {
               marginTop: 25,
-              marginBottom: 7,
+              marginBottom: 10,
               backgroundColor: "#1d2125",
               borderColor: "#ccccdc12",
               borderWidth: 1,
@@ -549,97 +642,23 @@ export default function App() {
         </View>
         <View style={styles.graphFlexBox}>
           <Graph
+            title="Fuel Rate (l/h)"
+            data={engineFuelRateData}
+            width={graphWidth}
+          />
+          <Graph
+            title="Power Consumption (hp)"
+            data={hpData}
+            width={graphWidth}
+          ></Graph>
+          <Graph
             title="Engine Speed (rpm)"
             data={engineSpeedData}
             width={graphWidth}
           />
-          <Graph title="hp" data={hpData} width={graphWidth}></Graph>
-          <Graph title="Torque (? unit)" data={torqueData} width={graphWidth} />
-          <Graph
-            title="Fuel Rate (l/h?)"
-            data={engineFuelRateData}
-            width={graphWidth}
-          />
+          <Graph title="Torque (lbf-in)" data={torqueData} width={graphWidth} />
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#101115",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    marginTop: 10,
-    textAlign: "center",
-    color: "white",
-  },
-  date_pressable: {
-    width: 100,
-    textAlign: "center",
-    borderColor: "#ccccdc12",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderRadius: 3,
-  },
-
-  date_quick_range_dropdown: {
-    width: 210,
-    textAlign: "center",
-  },
-  date_quick_range_dropdown_text: {
-    width: 210,
-    backgroundColor: "#292929",
-    color: "#CCCCDC",
-    textAlign: "center",
-    borderColor: "#ccccdc12",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderRadius: 3,
-    paddingVertical: 4,
-  },
-  date_child: {
-    color: "#CCCCDC",
-    textAlign: "center",
-  },
-
-  dropdown: {
-    width: "100%",
-    paddingVertical: 4,
-    borderWidth: 0,
-    borderRadius: 3,
-    backgroundColor: "cornflowerblue",
-  },
-  dropdown_text: {
-    fontSize: 18,
-    color: "white",
-    width: "100%",
-    textAlign: "center",
-    textAlignVertical: "center",
-  },
-  dropdown_dropdown: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderColor: "cornflowerblue",
-    borderWidth: 2,
-    borderRadius: 3,
-  },
-  graphFlexBox: {
-    width: "100%",
-    display: "flex",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-
-    rowGap: 10,
-    columnGap: 5,
-  },
-});

@@ -36,3 +36,6 @@ readAsArrayBuffer(blob) {
 ```
 
 (implementation provided by: <https://github.com/facebook/react-native/pull/30769#issuecomment-1449425629>)
+
+Since node_modules is within .gitignore, these changes must be implemented locally every time someone imports this repo.
+DO NOT include node_modules to solve this issue.
