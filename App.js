@@ -7,6 +7,7 @@ import {
   ScrollView,
   Pressable,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import "@expo/match-media";
 import { useMediaQuery } from "react-responsive";
@@ -209,8 +210,13 @@ export default function App() {
     return r;
   }
 
+  // show or hide loading indicator when fetching data
+  const [showActivityIndicator, setshowActivityIndicator] = useState(false);
+
   // fetch all data within specified time range
   const fetchData = async () => {
+    // show activity indicator (loading)
+    setshowActivityIndicator(true);
     const fromDateCopy = dateOrString(fromDate);
     const toDateCopy = dateOrString(toDate);
 
@@ -250,7 +256,10 @@ export default function App() {
       }
       console.log("\n\ntime range queried: " + fromDate + " to " + toDate);
     }
+
     handlewhatChanged("None");
+    // hide activity indicator
+    setshowActivityIndicator(false);
   };
 
   // Live update interval selection
@@ -659,6 +668,17 @@ export default function App() {
           <Graph title="Torque (lbf-in)" data={torqueData} width={graphWidth} />
         </View>
       </ScrollView>
+      <ActivityIndicator
+        animating={showActivityIndicator}
+        color="cornflowerblue"
+        size="large"
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          zIndex: 999,
+        }}
+      />
     </SafeAreaView>
   );
 }

@@ -3,13 +3,33 @@ import {
   VictoryChart,
   VictoryLine,
   VictoryAxis,
-  VictoryZoomContainer,
   VictoryTheme,
-  VictoryToolTip,
   VictoryVoronoiContainer,
 } from "victory-native";
+import * as Progress from "react-native-progress";
+import Stat from "./Stat";
+import { useState, useEffect } from "react";
 
 export default function Graph(props) {
+  function getMax(arr, prop) {
+    let max = null;
+    for (var i = 0; i < arr.length; i++) {
+      if (max == null || parseFloat(arr[i][prop]) > parseFloat(max))
+        max = parseFloat(arr[i][prop]);
+    }
+    return max;
+  }
+
+  useEffect(() => {
+    setMax(getMax(props.data, "_value"));
+    setCurrent(
+      parseFloat(props.data[props.data.length - 1]["_value"]).toFixed(2)
+    );
+  });
+
+  const [max, setMax] = useState(null);
+  const [current, setCurrent] = useState(null);
+
   return (
     <View style={styles.graph}>
       <Text style={styles.graphName}>{props.title}</Text>
@@ -62,17 +82,78 @@ export default function Graph(props) {
           y="_value"
         />
       </VictoryChart>
+      <View style={styles.stats_container_border} />
+      <View style={styles.stats_container}>
+        <View
+          id="stats-current"
+          style={{
+            ...styles.stats_card,
+            height: "100%",
+            width: 90,
+            justifyContent: "flex-start",
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "column",
+              alignItems: "center",
+              width: "100%",
+            }}
+          >
+            <Text style={{ ...styles.stats_text }}>Current</Text>
+            <Stat value={current / max} />
+            <Text
+              style={{ ...styles.circle_text }}
+              adjustsFontSizeToFit
+              numberOfLines={1}
+              maxFontSizeMultiplier={1}
+            >
+              {current != null ? current : "N/A"}
+            </Text>
+          </View>
+        </View>
+        <View
+          id="stats-max"
+          style={{
+            ...styles.stats_card,
+            height: "100%",
+            width: 90,
+            justifyContent: "flex-start",
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "column",
+              alignItems: "center",
+              width: "100%",
+            }}
+          >
+            <Text style={{ ...styles.stats_text }}>Max</Text>
+            <View style={{ flexDirection: "column" }}>
+              <Stat value={1} max={true} />
+              <Text
+                style={{ ...styles.circle_text, alignSelf: "center" }}
+                adjustsFontSizeToFit
+                numberOfLines={1}
+                maxFontSizeMultiplier={1}
+              >
+                {max != null ? max.toFixed(2) : "N/A"}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   graphName: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     marginTop: 10,
     textAlign: "center",
-    color: "#CCCCDC",
+    color: "white",
   },
   graph: {
     alignSelf: "center",
@@ -80,5 +161,48 @@ const styles = StyleSheet.create({
     borderColor: "#ccccdc12",
     borderWidth: "1px",
     borderStyle: "solid",
+  },
+  stats_container: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-evenly",
+    marginTop: -8,
+    paddingTop: 5,
+    paddingBottom: 15,
+  },
+  stats_container_border: {
+    alignSelf: "center",
+    borderTopWidth: 2,
+    borderTopColor: "#555555",
+    width: "75%",
+  },
+  stats_card: {
+    marginTop: 10,
+    marginBottom: -7,
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "column",
+    rowGap: 5,
+  },
+  circle: {
+    marginTop: 10,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: "#62BF56",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  circle_text: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+    fontSize: 25,
+    width: "70%",
+  },
+  stats_text: {
+    color: "#CCCCDC",
+    fontWeight: "bold",
+    fontSize: 18,
   },
 });
