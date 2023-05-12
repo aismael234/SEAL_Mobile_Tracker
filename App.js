@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   StyleSheet,
   Text,
@@ -21,6 +21,8 @@ import Graph from "./components/Graph";
 const MS_PER_SECOND = 1000;
 const MS_PER_MINUTE = 60000;
 const MS_PER_HOUR = 3600000;
+// width of tractor
+const WIDTH = 3.41;
 
 // InfluxDB setup
 // **These are private credentials and should not be displayed in production**
@@ -174,7 +176,13 @@ export default function App() {
   const [engineFuelRateData, setengineFuelRateData] = useState([
     { _field: "empty", _time: "empty", _value: "empty" },
   ]);
+  const [wheelBasedVehicleSpeed, setwheelBasedVehicleSpeed] = useState([
+    { _field: "empty", _time: "empty", _value: "empty" },
+  ]);
   const [torqueData, settorqueData] = useState([
+    { _field: "empty", _time: "empty", _value: "empty" },
+  ]);
+  const [tfcData, settfcData] = useState([
     { _field: "empty", _time: "empty", _value: "empty" },
   ]);
   const [hpData, sethpData] = useState([
@@ -191,6 +199,18 @@ export default function App() {
   }
   function getengineFuelRate(data) {
     return data.filter((o) => o._field === "EngineFuelRate");
+  }
+  function getWheelBasedVehicleSpeed(data) {
+    return data.filter((o) => o._field === "WheelBasedVehicleSpeed");
+  }
+  function getTFC(data) {
+    const groundSpeed = getWheelBasedVehicleSpeed(data);
+
+    return groundSpeed.map((o) => ({
+      ...o,
+      _field: "tfc",
+      _value: (o._value * WIDTH) / 10,
+    }));
   }
   function gettorque(data) {
     return data
@@ -252,6 +272,8 @@ export default function App() {
       setengineFuelRateData(getengineFuelRate(dataArray));
       settorqueData(gettorque(dataArray));
       sethpData(getHP(dataArray));
+      setwheelBasedVehicleSpeed(getWheelBasedVehicleSpeed(dataArray));
+      settfcData(getTFC(dataArray));
 
       for (i = 0; i < 10 && i < dataArray.length; i++) {
         console.log(dataArray[i]);
@@ -332,9 +354,10 @@ export default function App() {
 
   // Current time range data to select from saved time ranges
   const [timeRangeData, settimeRangeData] = useState([
-    `${new Date("2023-03-02T18:48:59.495Z").toLocaleString(
-      "en-US"
-    )}  to  ${new Date("2023-03-02T18:50:48.577Z").toLocaleString("en-US")}`,
+    {
+      from: new Date("2023-03-02T18:51:0Z"),
+      to: new Date("2023-03-02T19:00:0Z"),
+    },
   ]);
 
   /*
@@ -354,7 +377,8 @@ export default function App() {
 
   useEffect(() => {
     console.log("useEffect whatChanged: " + whatChanged);
-    if (whatChanged === "Temp From") {
+    if (whatChanged === "None") return;
+    else if (whatChanged === "Temp From") {
       if (fromDateChanged) {
         // If only from date was changed
         fetchData();
@@ -375,8 +399,7 @@ export default function App() {
         setfromDateChanged(false);
         settoDateChanged(false);
       }
-    } else if (whatChanged === "None") return;
-    else throw new Error("Incorrect 'whatChanged' value: " + whatChanged);
+    } else throw new Error("Incorrect 'whatChanged' value: " + whatChanged);
   }, [fromDateChanged, toDateChanged]);
 
   const isDeviceTablet = useMediaQuery({
@@ -456,6 +479,7 @@ export default function App() {
       fontSize: 18,
     },
     refresh_dropdown_list_text: {
+      textAlign: "center",
       backgroundColor: "#454545",
       color: "white",
     },
@@ -487,11 +511,14 @@ export default function App() {
       fontSize: 18,
     },
     quick_range_dropdown_list_text: {
+      textAlign: "center",
       backgroundColor: "#454545",
       color: "white",
     },
     time_range_dropdown_list: {
+      marginTop: 10,
       width: "95%",
+      backgroundColor: "#454545",
     },
     graphFlexBox: {
       width: "100%",
@@ -647,6 +674,7 @@ export default function App() {
               options={quickRangeData}
               style={styles.quick_range_dropdown}
               showsVerticalScrollIndicator={false}
+              saveScrollPosition={false}
               textStyle={styles.quick_range_dropdown_text}
               dropdownStyle={styles.quick_range_dropdown_list}
               dropdownTextStyle={styles.quick_range_dropdown_list_text}
@@ -692,9 +720,11 @@ export default function App() {
               borderStyle: "solid",
               borderRadius: 3,
               paddingVertical: 8,
-              justifyContent: "center",
+              textAlign: "center",
+              textAlignVertical: "center",
             }}
             textStyle={{
+              width: "100%",
               textAlign: "center",
               color: "#CCCCDC",
               fontSize: isDeviceTablet ? 18 : 13.5,
@@ -704,12 +734,40 @@ export default function App() {
               "  to  " +
               toDate.toLocaleString("en-US")
             }
-            options={timeRangeData}
+            options={timeRangeData.map(
+              (o) =>
+                `${o.from.toLocaleString("en-US")}  to  ${o.to.toLocaleString(
+                  "en-US"
+                )}`
+            )}
+            onSelect={(index, value) => {
+              settempfromDate(timeRangeData[index].from);
+              settemptoDate(timeRangeData[index].to);
+              handlewhatChanged("Temp From and To");
+            }}
+            animate={false}
+            saveScrollPosition={false}
+            showsVerticalScrollIndicator={false}
             dropdownStyle={styles.time_range_dropdown_list}
+            dropdownTextStyle={{
+              fontSize: isDeviceTablet ? 17 : 13,
+              textAlign: "center",
+              backgroundColor: "#454545",
+              color: "white",
+            }}
           />
         </View>
 
         <View style={styles.graphFlexBox}>
+          <Graph
+            title="Tractor Field Capacity"
+            data={tfcData}
+            width={
+              isDeviceTablet
+                ? Dimensions.get("window").width * 0.95
+                : graphWidth
+            }
+          />
           <Graph
             title="Fuel Rate (l/h)"
             data={engineFuelRateData}
@@ -720,12 +778,21 @@ export default function App() {
             data={hpData}
             width={graphWidth}
           ></Graph>
+          <Graph title="Torque (lbf-in)" data={torqueData} width={graphWidth} />
+          <Graph
+            title="Ground Speed (km/h)"
+            data={wheelBasedVehicleSpeed}
+            width={graphWidth}
+          />
           <Graph
             title="Engine Speed (rpm)"
             data={engineSpeedData}
-            width={graphWidth}
+            width={
+              isDeviceTablet
+                ? Dimensions.get("window").width * 0.95
+                : graphWidth
+            }
           />
-          <Graph title="Torque (lbf-in)" data={torqueData} width={graphWidth} />
         </View>
       </ScrollView>
     </SafeAreaView>

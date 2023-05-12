@@ -100,7 +100,12 @@ export default function Graph(props) {
             }}
           >
             <Text style={{ ...styles.stats_text }}>Current</Text>
-            <Stat value={isFinite(current) ? current / max : 0} max={false} />
+            <Stat
+              value={
+                isFinite(current) && current / max <= 1 ? current / max : 0
+              }
+              max={false}
+            />
             <Text
               style={{ ...styles.circle_text }}
               adjustsFontSizeToFit
