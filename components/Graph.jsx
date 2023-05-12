@@ -6,7 +6,6 @@ import {
   VictoryTheme,
   VictoryVoronoiContainer,
 } from "victory-native";
-import * as Progress from "react-native-progress";
 import Stat from "./Stat";
 import { useState, useEffect } from "react";
 
@@ -21,7 +20,7 @@ export default function Graph(props) {
   }
 
   useEffect(() => {
-    setMax(getMax(props.data, "_value"));
+    setMax(getMax(props.data, "_value").toFixed(2));
     setCurrent(
       parseFloat(props.data[props.data.length - 1]["_value"]).toFixed(2)
     );
@@ -101,7 +100,7 @@ export default function Graph(props) {
             }}
           >
             <Text style={{ ...styles.stats_text }}>Current</Text>
-            <Stat value={current / max} />
+            <Stat value={isFinite(current) ? current / max : 0} max={false} />
             <Text
               style={{ ...styles.circle_text }}
               adjustsFontSizeToFit
@@ -129,17 +128,15 @@ export default function Graph(props) {
             }}
           >
             <Text style={{ ...styles.stats_text }}>Max</Text>
-            <View style={{ flexDirection: "column" }}>
-              <Stat value={1} max={true} />
-              <Text
-                style={{ ...styles.circle_text, alignSelf: "center" }}
-                adjustsFontSizeToFit
-                numberOfLines={1}
-                maxFontSizeMultiplier={1}
-              >
-                {max != null ? max.toFixed(2) : "N/A"}
-              </Text>
-            </View>
+            <Stat value={isFinite(max) ? 1 : 0} max={true} />
+            <Text
+              style={{ ...styles.circle_text, alignSelf: "center" }}
+              adjustsFontSizeToFit
+              numberOfLines={1}
+              maxFontSizeMultiplier={1}
+            >
+              {max != null ? max : "N/A"}
+            </Text>
           </View>
         </View>
       </View>
@@ -156,6 +153,7 @@ const styles = StyleSheet.create({
     color: "white",
   },
   graph: {
+    height: 505,
     alignSelf: "center",
     backgroundColor: "#1d2125",
     borderColor: "#ccccdc12",
@@ -182,16 +180,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "column",
+    width: "100%",
     rowGap: 5,
-  },
-  circle: {
-    marginTop: 10,
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: "#62BF56",
-    alignItems: "center",
-    justifyContent: "center",
   },
   circle_text: {
     color: "white",

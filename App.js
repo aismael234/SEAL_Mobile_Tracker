@@ -61,7 +61,9 @@ export default function App() {
   fetching data
 
   NOTE: We say "wait for completion" because setState functions
-        are asynchronous
+        are asynchronous, and we don't want to fetch data before
+        that asyncronous operation finishes. If that were to happen,
+        we would be grabbing the same data before that state changed.
   */
   // initial state set to both changed to allow initial fetchData call
   const [whatChanged, setwhatChanged] = useState("Temp From and To");
@@ -215,7 +217,7 @@ export default function App() {
 
   // fetch all data within specified time range
   const fetchData = async () => {
-    // show activity indicator (loading)
+    // show activity indicator (loading icon)
     setshowActivityIndicator(true);
     const fromDateCopy = dateOrString(fromDate);
     const toDateCopy = dateOrString(toDate);
@@ -328,6 +330,13 @@ export default function App() {
     handlewhatChanged("Temp From and To");
   };
 
+  // Current time range data to select from saved time ranges
+  const [timeRangeData, settimeRangeData] = useState([
+    `${new Date("2023-03-02T18:48:59.495Z").toLocaleString(
+      "en-US"
+    )}  to  ${new Date("2023-03-02T18:50:48.577Z").toLocaleString("en-US")}`,
+  ]);
+
   /*
     makes sure that the state of all Date objects
     are updated BEFORE calling fetchData() 
@@ -387,6 +396,13 @@ export default function App() {
       justifyContent: "center",
       padding: 20,
     },
+    loadingContainer: {
+      position: "absolute",
+      top: "50%",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 999,
+    },
     header: {
       fontSize: 24,
       fontWeight: "bold",
@@ -404,22 +420,6 @@ export default function App() {
       borderStyle: "solid",
       borderRadius: 3,
     },
-    date_quick_range_dropdown: {
-      width: 210,
-      textAlign: "center",
-    },
-    date_quick_range_dropdown_text: {
-      width: isDeviceTablet ? 310 : 210,
-      backgroundColor: "#292929",
-      color: "#CCCCDC",
-      textAlign: "center",
-      borderColor: "#ccccdc12",
-      borderWidth: 1,
-      borderStyle: "solid",
-      borderRadius: 3,
-      paddingVertical: isDeviceTablet ? 10 : 6,
-      fontSize: isDeviceTablet ? 15 : 12,
-    },
     date_child: {
       color: "#CCCCDC",
       textAlign: "center",
@@ -427,11 +427,10 @@ export default function App() {
     },
 
     dropdown: {
-      width: "100%",
       paddingVertical: 4,
       borderWidth: 0,
       borderRadius: 3,
-      backgroundColor: "cornflowerblue",
+      backgroundColor: "#06908F",
       fontSize: 18,
     },
     dropdown_text: {
@@ -440,16 +439,60 @@ export default function App() {
       width: "100%",
       textAlign: "center",
       textAlignVertical: "center",
+      fontWeight: "bold",
     },
-    dropdown_dropdown: {
+    dropdown_text_highlight: {
+      color: "white",
+      fontWeight: "900",
+    },
+    refresh_dropdown_list: {
+      width: isDeviceTablet ? 150 : 90,
       paddingVertical: 10,
       paddingHorizontal: 16,
-      borderColor: "cornflowerblue",
+      borderColor: "#06908F",
+      backgroundColor: "#454545",
       borderWidth: 2,
       borderRadius: 3,
       fontSize: 18,
     },
-
+    refresh_dropdown_list_text: {
+      backgroundColor: "#454545",
+      color: "white",
+    },
+    quick_range_dropdown: {
+      width: isDeviceTablet ? 310 : 210,
+      textAlign: "center",
+    },
+    quick_range_dropdown_text: {
+      width: "100%",
+      backgroundColor: "#454545",
+      color: "#CCCCDC",
+      textAlign: "center",
+      borderColor: "#06908F",
+      borderWidth: 2,
+      borderStyle: "solid",
+      borderRadius: 3,
+      paddingVertical: isDeviceTablet ? 10 : 6,
+      fontSize: isDeviceTablet ? 15 : 12,
+      fontWeight: "bold",
+    },
+    quick_range_dropdown_list: {
+      width: isDeviceTablet ? 310 : 210,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderColor: "#06908F",
+      backgroundColor: "#454545",
+      borderWidth: 2,
+      borderRadius: 3,
+      fontSize: 18,
+    },
+    quick_range_dropdown_list_text: {
+      backgroundColor: "#454545",
+      color: "white",
+    },
+    time_range_dropdown_list: {
+      width: "95%",
+    },
     graphFlexBox: {
       width: "100%",
       display: "flex",
@@ -463,6 +506,13 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator
+          animating={showActivityIndicator}
+          color="cornflowerblue"
+          size="large"
+        />
+      </View>
       <ScrollView
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled={false}
@@ -506,7 +556,9 @@ export default function App() {
               }}
               showsVerticalScrollIndicator={false}
               textStyle={styles.dropdown_text}
-              dropdownStyle={styles.dropdown_dropdown}
+              dropdownStyle={styles.refresh_dropdown_list}
+              dropdownTextStyle={styles.refresh_dropdown_list_text}
+              dropdownTextHighlightStyle={styles.dropdown_text_highlight}
             />
           </View>
           <View style={{ display: "flex", flexDirection: "column", rowGap: 8 }}>
@@ -593,10 +645,12 @@ export default function App() {
               onSelect={handleQuickRange}
               defaultValue="Quick Range (e.g. 'last 5 min.')"
               options={quickRangeData}
-              style={styles.date_quick_range_dropdown}
+              style={styles.quick_range_dropdown}
               showsVerticalScrollIndicator={false}
-              textStyle={styles.date_quick_range_dropdown_text}
-              dropdownStyle={styles.dropdown_dropdown}
+              textStyle={styles.quick_range_dropdown_text}
+              dropdownStyle={styles.quick_range_dropdown_list}
+              dropdownTextStyle={styles.quick_range_dropdown_list_text}
+              dropdownTextHighlightStyle={styles.dropdown_text_highlight}
             />
             <Pressable
               style={({ pressed }) => [
@@ -628,27 +682,33 @@ export default function App() {
             </Pressable>
           </View>
         </View>
-        <View
-          style={[
-            styles.date_child,
-            {
-              marginTop: 25,
-              marginBottom: 10,
+        <View style={{ marginTop: 25, marginBottom: 5 }}>
+          <Text style={styles.date_child}>Current Time Range</Text>
+          <ModalDropdown
+            style={{
               backgroundColor: "#1d2125",
               borderColor: "#ccccdc12",
               borderWidth: 1,
               borderStyle: "solid",
               borderRadius: 3,
-              paddingVertical: 4,
-            },
-          ]}
-        >
-          <Text style={styles.date_child}>Current Time Range:</Text>
-          <Text style={styles.date_child}>
-            {fromDate.toLocaleString("en-US")} to{" "}
-            {toDate.toLocaleString("en-US")}
-          </Text>
+              paddingVertical: 8,
+              justifyContent: "center",
+            }}
+            textStyle={{
+              textAlign: "center",
+              color: "#CCCCDC",
+              fontSize: isDeviceTablet ? 18 : 13.5,
+            }}
+            defaultValue={
+              fromDate.toLocaleString("en-US") +
+              "  to  " +
+              toDate.toLocaleString("en-US")
+            }
+            options={timeRangeData}
+            dropdownStyle={styles.time_range_dropdown_list}
+          />
         </View>
+
         <View style={styles.graphFlexBox}>
           <Graph
             title="Fuel Rate (l/h)"
@@ -668,17 +728,6 @@ export default function App() {
           <Graph title="Torque (lbf-in)" data={torqueData} width={graphWidth} />
         </View>
       </ScrollView>
-      <ActivityIndicator
-        animating={showActivityIndicator}
-        color="cornflowerblue"
-        size="large"
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          zIndex: 999,
-        }}
-      />
     </SafeAreaView>
   );
 }

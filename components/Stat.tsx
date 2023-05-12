@@ -19,8 +19,8 @@ interface StatProps {
   max: boolean;
 }
 
-const START_ANGLE = 90;
-const END_ANGLE = 270;
+const START_ANGLE = 105;
+const END_ANGLE = 255;
 
 export default function Stat(props: StatProps) {
   const { value, max } = props;
@@ -98,7 +98,8 @@ export default function Stat(props: StatProps) {
             {...gauge.getArcProps({
               offset: -30,
               startAngle: START_ANGLE,
-              endAngle: gauge.valueToAngle(value * 100),
+              endAngle:
+                value >= 0 && value <= 1 ? gauge.valueToAngle(value * 100) : 0,
             })}
             strokeWidth={15}
             fill="transparent"
