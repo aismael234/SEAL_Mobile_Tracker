@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -52,10 +52,8 @@ export default function App() {
   const [isToDatePickerVisible, setToDatePickerVisibility] = useState(false);
 
   // True date values. These are used for fetching data.
-  const [fromDate, setfromDate] = useState(
-    new Date("2023-03-02T18:48:59.495Z")
-  );
-  const [toDate, settoDate] = useState(new Date("2023-03-02T18:50:48.577Z"));
+  const [fromDate, setfromDate] = useState(new Date("2023-03-02T18:48:00.0Z"));
+  const [toDate, settoDate] = useState(new Date("2023-03-02T18:49:00.0Z"));
 
   /* 
   Determines which time value changed within the date picker
@@ -105,8 +103,13 @@ export default function App() {
   Once we hit "Apply", the true date values are finally set to the current temp values.
   */
   const [tempfromDate, settempfromDate] = useState(fromDate);
+  useEffect(() => {
+    settempfromDate(fromDate);
+  }, [fromDate]);
   const [temptoDate, settemptoDate] = useState(toDate);
-
+  useEffect(() => {
+    settemptoDate(toDate);
+  }, [toDate]);
   // Set date picker component visibility
   const showFromDatePicker = () => {
     setFromDatePickerVisibility(true);
@@ -237,6 +240,17 @@ export default function App() {
 
   // fetch all data within specified time range
   const fetchData = async () => {
+    // if inputted time range != Current Time Range selection
+    // clear dropdown selection
+    let found = false;
+    for (let i = 0; i < timeRangeData.length; i++) {
+      if (timeRangeData[i].from == fromDate && timeRangeData[i].to == toDate) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) resetDropdownSelection();
+
     // show activity indicator (loading icon)
     setshowActivityIndicator(true);
     const fromDateCopy = dateOrString(fromDate);
@@ -355,11 +369,18 @@ export default function App() {
   // Current time range data to select from saved time ranges
   const [timeRangeData, settimeRangeData] = useState([
     {
+      from: new Date("2023-03-02T18:49:0Z"),
+      to: new Date("2023-03-02T18:54:0Z"),
+    },
+    {
+      from: new Date("2023-03-02T18:54:0Z"),
+      to: new Date("2023-03-02T18:58:0Z"),
+    },
+    {
       from: new Date("2023-03-02T18:51:0Z"),
       to: new Date("2023-03-02T19:00:0Z"),
     },
   ]);
-
   /*
     makes sure that the state of all Date objects
     are updated BEFORE calling fetchData() 
@@ -374,6 +395,16 @@ export default function App() {
   useEffect(() => {
     settoDateChanged(true);
   }, [toDate]);
+
+  // current time range component
+
+  const dropdownRef = useRef(null); // Create a ref for the modal dropdown component
+
+  const resetDropdownSelection = () => {
+    if (dropdownRef.current) {
+      dropdownRef.current.select(-1);
+    }
+  };
 
   useEffect(() => {
     console.log("useEffect whatChanged: " + whatChanged);
@@ -710,13 +741,20 @@ export default function App() {
             </Pressable>
           </View>
         </View>
-        <View style={{ marginTop: 25, marginBottom: 5 }}>
+        <View
+          style={{
+            marginTop: 25,
+            marginBottom: 5,
+          }}
+        >
           <Text style={styles.date_child}>Current Time Range</Text>
           <ModalDropdown
+            ref={dropdownRef}
             style={{
               backgroundColor: "#1d2125",
               borderColor: "#ccccdc12",
               borderWidth: 1,
+              borderColor: "#73BF69",
               borderStyle: "solid",
               borderRadius: 3,
               paddingVertical: 8,
@@ -744,6 +782,8 @@ export default function App() {
               settempfromDate(timeRangeData[index].from);
               settemptoDate(timeRangeData[index].to);
               handlewhatChanged("Temp From and To");
+              setfromDate(timeRangeData[index].from);
+              settoDate(timeRangeData[index].to);
             }}
             animate={false}
             saveScrollPosition={false}
@@ -754,6 +794,11 @@ export default function App() {
               textAlign: "center",
               backgroundColor: "#454545",
               color: "white",
+            }}
+            dropdownTextHighlightStyle={{
+              color: "white",
+              fontWeight: "800",
+              backgroundColor: "#666666",
             }}
           />
         </View>
