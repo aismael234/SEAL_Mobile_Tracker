@@ -20,10 +20,17 @@ export default function Graph(props) {
   }
 
   useEffect(() => {
-    setMax(getMax(props.data, "_value").toFixed(2));
-    setCurrent(
-      parseFloat(props.data[props.data.length - 1]["_value"]).toFixed(2)
-    );
+    if (props.data.length > 0) {
+      setMax(getMax(props.data, "_value").toFixed(2));
+      setCurrent(
+        props.data.length > 0
+          ? parseFloat(props.data[props.data.length - 1]["_value"]).toFixed(2)
+          : max
+      );
+    } else {
+      setMax(0);
+      setCurrent(0);
+    }
   });
 
   const [max, setMax] = useState(null);

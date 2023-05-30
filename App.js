@@ -79,6 +79,7 @@ export default function App() {
       case "Temp From and To":
         if (whatChanged === value) break;
         setwhatChanged(value);
+        break;
       case "Temp From":
         if (whatChanged === "Temp From and To" || whatChanged === value) break;
         if (whatChanged === "Temp To") setwhatChanged("Temp From and To");
@@ -240,8 +241,10 @@ export default function App() {
 
   // fetch all data within specified time range
   const fetchData = async () => {
-    // if inputted time range != Current Time Range selection
-    // clear dropdown selection
+    /* 
+      if inputted time range != Current Time Range selection:
+        Reset 'Current Time Range' dropdown selection 
+    */
     let found = false;
     for (let i = 0; i < timeRangeData.length; i++) {
       if (timeRangeData[i].from == fromDate && timeRangeData[i].to == toDate) {
@@ -249,7 +252,16 @@ export default function App() {
         break;
       }
     }
-    if (!found) resetDropdownSelection();
+    if (!found) resetDropdownSelection(currentRangeRef);
+
+    /* 
+      if inputted time range != quick range values (e.g. "now" or "now-5m"):
+        Reset 'Quick Time Range' dropdown selection
+    */
+    if (fromDate instanceof Date || toDate instanceof Date) {
+      console.log("reset quick range");
+      resetDropdownSelection(quickRangeRef);
+    }
 
     // show activity indicator (loading icon)
     setshowActivityIndicator(true);
@@ -336,34 +348,34 @@ export default function App() {
 
   // Apply a quick range selection to current time
   const handleQuickRange = (index, value) => {
-    settemptoDate("now");
+    handlewhatChanged("Temp From and To");
+    settoDate("now");
     switch (value) {
       case "Last 5 minutes":
-        settempfromDate("now-5m");
+        setfromDate("now-5m");
         break;
       case "Last 10 minutes":
-        settempfromDate("now-10m");
+        setfromDate("now-10m");
         break;
       case "Last 30 minutes":
-        settempfromDate("now-30m");
+        setfromDate("now-30m");
         break;
       case "Last 1 hour":
-        settempfromDate("now-1h");
+        setfromDate("now-1h");
         break;
       case "Last 3 hours":
-        settempfromDate("now-3h");
+        setfromDate("now-3h");
         break;
       case "Last 6 hours":
-        settempfromDate("now-6h");
+        setfromDate("now-6h");
         break;
       case "Last 12 hours":
-        settempfromDate("now-12h");
+        setfromDate("now-12h");
         break;
       case "Last 24 hours":
-        settempfromDate("now-24h");
+        setfromDate("now-24h");
         break;
     }
-    handlewhatChanged("Temp From and To");
   };
 
   // Current time range data to select from saved time ranges
@@ -398,11 +410,12 @@ export default function App() {
 
   // current time range component
 
-  const dropdownRef = useRef(null); // Create a ref for the modal dropdown component
+  const currentRangeRef = useRef(null); // Create a ref for the 'Current' time range dropdown component
+  const quickRangeRef = useRef(null); // Create a ref for the 'Quick' time range down component
 
-  const resetDropdownSelection = () => {
-    if (dropdownRef.current) {
-      dropdownRef.current.select(-1);
+  const resetDropdownSelection = (ref) => {
+    if (ref.current) {
+      ref.current.select(-1);
     }
   };
 
@@ -699,6 +712,7 @@ export default function App() {
             </View>
             <ModalDropdown
               id="quick-range-dropdown"
+              ref={quickRangeRef}
               animated={false}
               onSelect={handleQuickRange}
               defaultValue="Quick Range (e.g. 'last 5 min.')"
@@ -749,11 +763,11 @@ export default function App() {
         >
           <Text style={styles.date_child}>Current Time Range</Text>
           <ModalDropdown
-            ref={dropdownRef}
+            ref={currentRangeRef}
             style={{
               backgroundColor: "#1d2125",
               borderColor: "#ccccdc12",
-              borderWidth: 1,
+              borderWidth: 2,
               borderColor: "#73BF69",
               borderStyle: "solid",
               borderRadius: 3,
