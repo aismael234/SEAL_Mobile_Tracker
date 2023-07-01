@@ -26,11 +26,11 @@ const WIDTH = 3.41;
 
 // InfluxDB setup
 // **These are private credentials and should not be displayed in production**
-const token =
-  "4oaBPQIZR46YM6XA_z7cojw_yRTCx353Lj7KweWZLw2Gzl79sp2PQqYc-Y22zCWi8dhzlRBn9epre1bk1WI7BA==";
-const org = "d299810bfddf9f13";
-const bucket = "seal_project";
-const url = "https://us-west-2-2.aws.cloud2.influxdata.com";
+
+const token = "";
+const org = "";
+const bucket = "";
+const url = "";
 const client = new InfluxDB({ url, token });
 
 export default function App() {
